@@ -1,0 +1,17 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+    name: "demoaksv1-5da7"
+    labels:
+        app: "demoaksv1-5da7"
+    annotations:
+        kubernetes.io/ingress.class: addon-http-application-routing
+spec:
+    rules:
+        - host: demoaksv1aa2b-demoaksv1-5da7.2d5a6797b4f74cce80b7.eastus.aksapp.io
+          http:
+            paths:
+            - path: /
+              backend:
+                serviceName: "demoaksv1-5da7"
+                servicePort: 80
