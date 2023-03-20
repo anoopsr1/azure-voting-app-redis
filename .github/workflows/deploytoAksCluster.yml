@@ -1,0 +1,51 @@
+on: [push]
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@master
+    
+    - uses: azure/docker-login@v1
+      with:
+        login-server: anoopsr1acr.azurecr.io
+        username: ${{ secrets.acr_anoopsr1acr_username }}
+        password: ${{ secrets.acr_anoopsr1acr_password }}
+    
+    - name: Build and push image to ACR
+      id: build-image
+      run: |
+        docker build "$GITHUB_WORKSPACE/azure-vote" -f  "azure-vote/Dockerfile" -t anoopsr1acr.azurecr.io/demoaksv1:${{ github.sha }} --label dockerfile-path=azure-vote/Dockerfile
+        docker push anoopsr1acr.azurecr.io/demoaksv1:${{ github.sha }}
+    
+    - uses: azure/k8s-set-context@v1
+      with:
+         kubeconfig: ${{ secrets.aks_demoaksv1_kubeConfig }}
+      id: login
+    
+    - name: Create namespace
+      run: |
+        namespacePresent=`kubectl get namespace | grep demoaksv1aa2b | wc -l`
+        if [ $namespacePresent -eq 0 ]
+        then
+            echo `kubectl create namespace demoaksv1aa2b`
+        fi
+
+    - uses: azure/k8s-create-secret@v1
+      with:
+        namespace: demoaksv1aa2b
+        container-registry-url: anoopsr1acr.azurecr.io
+        container-registry-username: ${{ secrets.acr_anoopsr1acr_username }}
+        container-registry-password: ${{ secrets.acr_anoopsr1acr_password }}
+        secret-name: demoaksv1dockerauth
+       
+    - uses: azure/k8s-deploy@v1.2
+      with:
+        namespace: demoaksv1aa2b
+        manifests: |
+          manifests/deployment.yml
+          manifests/service.yml
+          manifests/ingress.yml
+        images: |
+          anoopsr1acr.azurecr.io/demoaksv1:${{ github.sha }}
+        imagepullsecrets: |
+          demoaksv1dockerauth
