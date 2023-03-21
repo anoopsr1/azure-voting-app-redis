@@ -12,6 +12,9 @@ spec:
           http:
             paths:
             - path: /
+              pathType: Prefix
               backend:
-                serviceName: "demoaksv1-5da7"
-                servicePort: 80
+                service:
+                    name: "demoaksv1-5da7"
+                    port:
+                        number: 80
